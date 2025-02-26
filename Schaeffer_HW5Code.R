@@ -47,11 +47,7 @@ for (i in track.indices) {
   
   #Making a vector containing artist, album, and song
   song.vector = str_split_1(current.songname, "-")
-  ###Pulling track, album, and artist
-  current.track = song.vector[3]
-  current.album = song.vector[2]
-  current.artist = song.vector[1]
-  
+
   ###Pulling data from JSON file
   json.pathname = paste(folder.name, current.filename, sep = '/')
   json.track = fromJSON(json.pathname)
@@ -84,83 +80,30 @@ for (i in track.indices) {
 #Loading our dataframe file
 output.model = read.csv("EssentiaOutput/EssentiaModelOutput.csv")
 
-###NOTE ABOUT HW5 #####################
-###It seemed for calculating the means there was not a more effective way to do so 
-###in tidyverse (at least that I saw), so I left these the same and then moved all adding to
-###the data.frame at the end using tidyverse functionality
-
-#Calculating arousal mean
-arousal.emo = output.model$emo_arousal
-arousal.deam = output.model$deam_arousal
-arousal.muse = output.model$muse_arousal
-#Turning vectors into matrix to calculate mean
-arousal.mat = cbind(arousal.emo, arousal.deam, arousal.muse)
-arousal.mean = rowMeans(arousal.mat)
-
-#Calculating Valence mean
-valence.emo = output.model$emo_valence
-valence.deam = output.model$deam_valence
-valence.muse = output.model$muse_valence
-#Turning vectors into matrix to calculate mean
-valence.mat = cbind(valence.emo, valence.deam, valence.muse)
-valence.mean = rowMeans(valence.mat)
-
-#Adding these vectors to the dataframe
-
-##################### Caclculating moods ######################
-#Agressive
-aggressive.vectors = cbind(output.model$eff_aggressive, output.model$nn_aggressive)
-aggressive.mean = rowMeans(aggressive.vectors)
-#Happy
-happy.vectors = cbind(output.model$eff_happy, output.model$nn_happy)
-happy.mean = rowMeans(happy.vectors)
-#party
-party.vectors = cbind(output.model$eff_party, output.model$nn_party)
-party.mean = rowMeans(party.vectors)
-#Relaxed
-relaxed.vectors = cbind(output.model$eff_relax, output.model$nn_relax)
-relaxed.mean = rowMeans(relaxed.vectors)
-#sad
-sad.vectors = cbind(output.model$eff_sad, output.model$nn_sad)
-sad.mean = rowMeans(sad.vectors)
-
-#Making new dataframe to add to original
-df.toadd = data.frame(agressive = aggressive.mean,
-                      happy = happy.mean,
-                      relaxed = relaxed.mean,
-                      sad = sad.mean)
-
-###################### Acoustic vs Electric, Instrumental ####################
-#Acoustic
-acoustic.vectors = cbind(output.model$eff_acoustic, output.model$nn_acoustic)
-acoustic.mean = rowMeans(acoustic.vectors)
-#Electric
-electric.vectors = cbind(output.model$eff_electronic, output.model$nn_electronic)
-electric.mean = rowMeans(electric.vectors)
-#Instrumental
-instrumental.vectors=cbind(output.model$eff_instrumental, output.model$nn_instrumental)
-instrumental.mean = rowMeans(instrumental.vectors)
-
-### Calculating Timbre
-timbreBright = output.model$eff_timbre_bright
-
-#############################################
-#Making new dataframe with this information
-essentia.dataframe = data.frame(
-  artist = output.model$artist,
-  album = output.model$album,
-  track = output.model$track,
-  arousal = arousal.mean,
-  valence = valence.mean,
-  agressive = aggressive.mean,
-  happy = happy.mean,
-  relaxed = relaxed.mean,
-  sad = sad.mean,
-  acoustic = acoustic.mean,
-  electric = electric.mean,
-  instrumental = instrumental.mean,
-  timbrBright = timbreBright
-)
+###Writing the matrix utilizing tinyverse
+###First focusing on transitioning to using means, then will select only desired columns
+output.model = output.model %>%
+  #I'm a little confused how rowwise works, but when doing some research this seemed
+  #the best way to accomplish my task, is this saying that from anything past that pipe
+  #I want to have my functions apply to the entirety of the row?
+  rowwise() %>%
+  mutate(
+    arousal = mean(c(emo_arousal, deam_arousal, muse_arousal)),
+    valence = mean(c(emo_valence, deam_valence, muse_valence)),
+    aggressive = mean(c(eff_aggressive, nn_aggressive)),
+    happy = mean(c(eff_happy, nn_happy)),
+    party = mean(c(eff_party, nn_party)),
+    relaxed = mean(c(eff_relax, nn_relax)),
+    sad = mean(c(eff_sad, nn_sad)),
+    acoustic = mean(c(eff_acoustic, nn_acoustic)),
+    electric = mean(c(eff_electronic, nn_electronic)),
+    instrumental = mean(c(eff_instrumental, nn_instrumental)),
+    timbreBright = eff_timbre_bright
+  )
+###Now that all desired columns are made, we retain only desired
+essentia.dataframe = output.model %>%
+  select(artist, album, track, arousal, valence, aggressive, happy,
+         party, relaxed, sad, acoustic, electric, instrumental, timbreBright)
 
 
 ##########################################################
@@ -183,7 +126,8 @@ final.dataframe = merge(final.dataframe, lyric.output,
 )
 
 # Rename function column
-colnames(final.dataframe)[colnames(final.dataframe) == "function."] = "func"
+final.dataframe = final.dataframe %>%
+  rename(func = function.)
 
 #Making every column that is numerical actually have numeric class
 final.dataframe[, 4:ncol(final.dataframe)] <- lapply(final.dataframe[, 4:ncol(final.dataframe)], as.numeric)
