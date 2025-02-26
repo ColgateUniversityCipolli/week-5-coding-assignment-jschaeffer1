@@ -1,0 +1,230 @@
+\documentclass{article}\usepackage[]{graphicx}\usepackage[]{xcolor}
+% maxwidth is the original width if it is less than linewidth
+% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlsng}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hldef}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+\let\hlipl\hlkwb
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
+\usepackage[margin=1.0in]{geometry} % To set margins
+\usepackage{amsmath}  % This allows me to use the align functionality.
+                      % If you find yourself trying to replicate
+                      % something you found online, ensure you're
+                      % loading the necessary packages!
+\usepackage{amsfonts} % Math font
+\usepackage{fancyvrb}
+\usepackage{hyperref} % For including hyperlinks
+\usepackage[shortlabels]{enumitem}% For enumerated lists with labels specified
+                                  % We had to run tlmgr_install("enumitem") in R
+\usepackage{float}    % For telling R where to put a table/figure
+\usepackage{natbib}        %For the bibliography
+\bibliographystyle{apalike}%For the bibliography
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+\begin{enumerate}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% QUESTION 1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\item In Lab 3, you wrangled data from Essentia, Essentia models and LIWC. Rework your 
+solution to Lab 3 using \texttt{tidyverse} \citep{tidyverse} instead of base \texttt{R}.
+Specifically, rewrite your code for steps 1-4 of task 2 using \texttt{tidyverse} \citep{tidyverse}. 
+Make sure to address any issues I noted in your code file, and ensure that your code 
+runs in the directory as it is set up.
+\begin{knitrout}\scriptsize
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{##########################################################}
+\hlcom{###                      Step 2                       ####}
+\hlcom{#Completing step 1 for every JSON File}
+\hlcom{##########################################################}
+\hlkwd{library}\hldef{(stringr)}
+\hlkwd{library}\hldef{(jsonlite)}
+\hlkwd{library}\hldef{(tidyverse)}
+
+
+\hlcom{#Making our empty dataframe}
+\hldef{empty.dataframe} \hlkwb{=} \hlkwd{data.frame}\hldef{(}
+  \hlkwc{artist} \hldef{=} \hlkwd{character}\hldef{(),}
+  \hlkwc{album} \hldef{=} \hlkwd{character}\hldef{(),}
+  \hlkwc{track} \hldef{=} \hlkwd{character}\hldef{(),}
+  \hlkwc{overall_loudness} \hldef{=} \hlkwd{numeric}\hldef{(),}
+  \hlkwc{spectral_energy} \hldef{=} \hlkwd{numeric}\hldef{(),}
+  \hlkwc{dissonance} \hldef{=} \hlkwd{numeric}\hldef{(),}
+  \hlkwc{pitch_salience} \hldef{=} \hlkwd{numeric}\hldef{(),}
+  \hlkwc{bpm} \hldef{=} \hlkwd{numeric}\hldef{(),}
+  \hlkwc{beats_loudness} \hldef{=} \hlkwd{numeric}\hldef{(),}
+  \hlkwc{danceability} \hldef{=} \hlkwd{numeric}\hldef{(),}
+  \hlkwc{tuning_frequency} \hldef{=} \hlkwd{numeric}\hldef{()}
+\hldef{)}
+
+\hldef{song.dataframe} \hlkwb{=} \hldef{empty.dataframe}
+
+\hlcom{#Pulling list of all tracks to be iterated}
+\hldef{folder.name} \hlkwb{=} \hlsng{'EssentiaOutput'}
+\hldef{all.tracks} \hlkwb{=} \hlkwd{list.files}\hldef{(folder.name)}
+
+\hlcom{#Making sure only valid json files are being used}
+\hldef{json.count} \hlkwb{=} \hlkwd{str_count}\hldef{(all.tracks,} \hlsng{".json"}\hldef{)}
+\hldef{track.indices} \hlkwb{=} \hlkwd{which}\hldef{(json.count} \hlopt{==} \hlnum{1}\hldef{)}
+
+
+\hldef{df.index} \hlkwb{=} \hlnum{1} \hlcom{#Initializing where to input in dataframe}
+\hlkwa{for} \hldef{(i} \hlkwa{in} \hldef{track.indices) \{}
+  \hlcom{#Running for loop over every track}
+
+  \hlcom{##########################################################}
+  \hlcom{###                      Step 1                       ####}
+  \hlcom{# Pulling file and extracting necessary info from JSON}
+  \hlcom{##########################################################}
+  \hldef{current.filename} \hlkwb{=} \hldef{all.tracks[i]}
+  \hlcom{#current.filename = "The Front Bottoms-Talon Of The Hawk-Au Revoir (Adios).json"}
+  \hldef{current.songname} \hlkwb{=} \hlkwd{str_sub}\hldef{(current.filename,} \hlkwc{end} \hldef{=} \hlopt{-}\hlnum{6}\hldef{)}
+
+  \hlcom{#Making a vector containing artist, album, and song}
+  \hldef{song.vector} \hlkwb{=} \hlkwd{str_split_1}\hldef{(current.songname,} \hlsng{"-"}\hldef{)}
+
+  \hlcom{###Pulling data from JSON file}
+  \hldef{json.pathname} \hlkwb{=} \hlkwd{paste}\hldef{(folder.name, current.filename,} \hlkwc{sep} \hldef{=} \hlsng{'/'}\hldef{)}
+  \hldef{json.track} \hlkwb{=} \hlkwd{fromJSON}\hldef{(json.pathname)}
+
+
+  \hldef{song.dataframe[df.index, ]} \hlkwb{<-} \hlkwd{tibble}\hldef{(} \hlcom{#Adding the information directly through a tibble}
+    \hlkwc{artist} \hldef{= song.vector[}\hlnum{1}\hldef{],}
+    \hlkwc{album} \hldef{= song.vector[}\hlnum{2}\hldef{],}
+    \hlkwc{track} \hldef{= song.vector[}\hlnum{3}\hldef{],}
+    \hlkwc{overall_loudness} \hldef{= json.track}\hlopt{$}\hldef{lowlevel}\hlopt{$}\hldef{average_loudness,}
+    \hlkwc{spectral_energy} \hldef{= json.track}\hlopt{$}\hldef{lowlevel}\hlopt{$}\hldef{spectral_energy}\hlopt{$}\hldef{mean,}
+    \hlkwc{dissonance} \hldef{= json.track}\hlopt{$}\hldef{lowlevel}\hlopt{$}\hldef{dissonance}\hlopt{$}\hldef{mean,}
+    \hlkwc{pitch_salience} \hldef{= json.track}\hlopt{$}\hldef{lowlevel}\hlopt{$}\hldef{pitch_salience}\hlopt{$}\hldef{mean,}
+    \hlkwc{bpm} \hldef{= json.track}\hlopt{$}\hldef{rhythm}\hlopt{$}\hldef{bpm,}
+    \hlkwc{beats_loudness} \hldef{= json.track}\hlopt{$}\hldef{rhythm}\hlopt{$}\hldef{beats_loudness}\hlopt{$}\hldef{mean,}
+    \hlkwc{danceability} \hldef{= json.track}\hlopt{$}\hldef{rhythm}\hlopt{$}\hldef{danceability,}
+    \hlkwc{tuning_frequency} \hldef{= json.track}\hlopt{$}\hldef{tonal}\hlopt{$}\hldef{tuning_frequency}
+  \hldef{)}
+
+
+  \hldef{df.index}\hlkwb{=}\hldef{df.index}\hlopt{+}\hlnum{1} \hlcom{#Moving to next dataframe index}
+\hldef{\}}
+
+
+
+\hlcom{##########################################################}
+\hlcom{###                      Step 3                       ####}
+\hlcom{# Making new dataframe using essentia models}
+\hlcom{##########################################################}
+\hlcom{#Loading our dataframe file}
+\hldef{output.model} \hlkwb{=} \hlkwd{read.csv}\hldef{(}\hlsng{"EssentiaOutput/EssentiaModelOutput.csv"}\hldef{)}
+
+\hlcom{###Writing the matrix utilizing tinyverse}
+\hlcom{###First focusing on transitioning to using means, then will select only desired columns}
+\hldef{output.model} \hlkwb{=} \hldef{output.model} \hlopt{%>%}
+  \hlcom{#I'm a little confused how rowwise works, but when doing some research this seemed}
+  \hlcom{#the best way to accomplish my task, is this saying that from anything past that pipe}
+  \hlcom{#I want to have my functions apply to the entirety of the row?}
+  \hlkwd{rowwise}\hldef{()} \hlopt{%>%}
+  \hlkwd{mutate}\hldef{(}
+    \hlkwc{arousal} \hldef{=} \hlkwd{mean}\hldef{(}\hlkwd{c}\hldef{(emo_arousal, deam_arousal, muse_arousal)),}
+    \hlkwc{valence} \hldef{=} \hlkwd{mean}\hldef{(}\hlkwd{c}\hldef{(emo_valence, deam_valence, muse_valence)),}
+    \hlkwc{aggressive} \hldef{=} \hlkwd{mean}\hldef{(}\hlkwd{c}\hldef{(eff_aggressive, nn_aggressive)),}
+    \hlkwc{happy} \hldef{=} \hlkwd{mean}\hldef{(}\hlkwd{c}\hldef{(eff_happy, nn_happy)),}
+    \hlkwc{party} \hldef{=} \hlkwd{mean}\hldef{(}\hlkwd{c}\hldef{(eff_party, nn_party)),}
+    \hlkwc{relaxed} \hldef{=} \hlkwd{mean}\hldef{(}\hlkwd{c}\hldef{(eff_relax, nn_relax)),}
+    \hlkwc{sad} \hldef{=} \hlkwd{mean}\hldef{(}\hlkwd{c}\hldef{(eff_sad, nn_sad)),}
+    \hlkwc{acoustic} \hldef{=} \hlkwd{mean}\hldef{(}\hlkwd{c}\hldef{(eff_acoustic, nn_acoustic)),}
+    \hlkwc{electric} \hldef{=} \hlkwd{mean}\hldef{(}\hlkwd{c}\hldef{(eff_electronic, nn_electronic)),}
+    \hlkwc{instrumental} \hldef{=} \hlkwd{mean}\hldef{(}\hlkwd{c}\hldef{(eff_instrumental, nn_instrumental)),}
+    \hlkwc{timbreBright} \hldef{= eff_timbre_bright}
+  \hldef{)}
+\hlcom{###Now that all desired columns are made, we retain only desired}
+\hldef{essentia.dataframe} \hlkwb{=} \hldef{output.model} \hlopt{%>%}
+  \hlkwd{select}\hldef{(artist, album, track, arousal, valence, aggressive, happy,}
+         \hldef{party, relaxed, sad, acoustic, electric, instrumental, timbreBright)}
+
+
+\hlcom{##########################################################}
+\hlcom{###                      Step 4                       ####}
+\hlcom{# Making a final dataframe that includes all information}
+\hlcom{##########################################################}
+\hldef{lyric.output} \hlkwb{=} \hlkwd{read.csv}\hldef{(}\hlsng{"LIWCOutput/LIWCOutput.csv"}\hldef{)}
+\hlcom{#Loading dataframe}
+
+
+\hlcom{###Merging together our .wav data dataframe and our essentia dataframe}
+\hldef{final.dataframe} \hlkwb{=} \hlkwd{merge}\hldef{(song.dataframe, essentia.dataframe,}
+                        \hlkwc{by} \hldef{=} \hlkwd{c}\hldef{(}\hlsng{"artist"}\hldef{,} \hlsng{"album"}\hldef{,} \hlsng{"track"}\hldef{)}
+\hldef{)}
+
+
+\hlcom{###Adding our lyric dataframe}
+\hldef{final.dataframe} \hlkwb{=} \hlkwd{merge}\hldef{(final.dataframe, lyric.output,}
+                        \hlkwc{by} \hldef{=} \hlkwd{c}\hldef{(}\hlsng{"artist"}\hldef{,} \hlsng{"album"}\hldef{,} \hlsng{"track"}\hldef{)}
+\hldef{)}
+
+\hlcom{# Rename function column}
+\hldef{final.dataframe} \hlkwb{=} \hldef{final.dataframe} \hlopt{%>%}
+  \hlkwd{rename}\hldef{(}\hlkwc{func} \hldef{= function.)}
+
+\hlcom{#Making every column that is numerical actually have numeric class}
+\hldef{final.dataframe[,} \hlnum{4}\hlopt{:}\hlkwd{ncol}\hldef{(final.dataframe)]} \hlkwb{<-} \hlkwd{lapply}\hldef{(final.dataframe[,} \hlnum{4}\hlopt{:}\hlkwd{ncol}\hldef{(final.dataframe)], as.numeric)}
+
+
+\hlcom{##########################################################}
+\hlcom{###                      Step 5                       ####}
+\hlcom{# Separating out Allentown}
+\hlcom{##########################################################}
+\hlcom{#Making a file that contains everything except Allentown}
+\hlkwd{write.csv}\hldef{(final.dataframe[final.dataframe}\hlopt{$}\hldef{track}\hlopt{!=}\hlsng{"Allentown"}\hldef{, ],} \hlsng{"trainingdata.csv"}\hldef{)}
+
+\hlcom{#Making a file that ONLY contains Allentown}
+\hlkwd{write.csv}\hldef{(final.dataframe[final.dataframe}\hlopt{$}\hldef{track}\hlopt{==}\hlsng{"Allentown"}\hldef{, ],} \hlsng{"testingdata.csv"}\hldef{)}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+\end{enumerate}
+\bibliography{bibliography}
+\end{document}
